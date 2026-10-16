@@ -53,7 +53,7 @@ Server listening on port 3000
 [2026-10-16T08:30:00.930Z] GET /hello
 ```
 
-A log line is `[ISO-8601 timestamp] [HTTP method] [request path]`: an ISO-8601 UTC timestamp with millisecond precision and a trailing `Z`, then the HTTP method, then the request path. A request for an unknown path is logged the same way, next to the `404` it receives:
+A log line is `[ISO-8601 timestamp] [HTTP method] [request path]`: an ISO-8601 UTC timestamp with millisecond precision and a trailing `Z`, then the HTTP method, then the request target exactly as received — the path with any query string still attached to it, so `GET /hello?x=1` is logged with the query string visible even though it plays no part in matching. A request for an unknown path is logged the same way, next to the `404` it receives:
 
 ```text
 [2026-10-16T08:30:01.104Z] GET /invalid
