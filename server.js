@@ -16,7 +16,8 @@ function resolvePort() {
     return DEFAULT_PORT;
   }
   const port = Number(raw);
-  if (!Number.isInteger(port) || port < MIN_PORT || port > MAX_PORT) {
+  // A plain decimal integer 1024-65535, checked before any bind; 1024 is the privileged-port boundary, which the runtime does not enforce.
+  if (!/^\d+$/.test(raw) || !Number.isInteger(port) || port < MIN_PORT || port > MAX_PORT) {
     console.error(
       `Invalid PORT "${raw}": expected an integer between ${MIN_PORT} and ${MAX_PORT}. ` +
         'Unset PORT or set it to a value in that range.'
@@ -38,6 +39,7 @@ function resolveRoute(method, path) {
 
 /** Log the request before routing it, then write the plain-text response. */
 function handleRequest(req, res) {
+  // Logged before any route decision, so unmatched requests are logged too.
   logRequest(req);
   const path = req.url.split('?')[0];
   const { status, body } = resolveRoute(req.method, path);
@@ -60,11 +62,14 @@ function handleBindError(err, port) {
 /** Stop accepting connections and exit with status 0 once the server has closed. */
 function handleShutdown(server) {
   console.log('Shutting down server');
+  // server.close() alone: closeAllConnections() and closeIdleConnections() were added in Node v18.2.0, above the declared v18.0.0 floor.
+  // The exit status is settled by this explicit process.exit(0), not by the event loop draining after close().
   server.close(() => process.exit(0));
 }
 
 /** Resolve the port, start listening and register the shutdown handler. */
 function start() {
+  // resolvePort() validates before the server is created, so a bad value is a configuration error, not a socket error.
   const port = resolvePort();
   const server = http.createServer(handleRequest);
 
